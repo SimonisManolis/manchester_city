@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tag } from '../../ui/misc';
+import Blocks from './blocks';
 
 const MatchesHome = () =>{
     return(
@@ -19,7 +20,7 @@ const MatchesHome = () =>{
                     Matches
                 </Tag>
 
-                Blocks
+                <Blocks/>
 
                 <Tag
                     link={true}
