@@ -7,11 +7,14 @@ import Dashboard from './Components/Admin/dashboard';
 import PrivateRoutes from './Components/AuthRoutes/privateRoutes';
 import PublicRoutes from './Components/AuthRoutes/publicRoutes';
 import AdminMatches from './Components/Admin/Matches/adminMatches';
+import AddEditMatch from './Components/Admin/Matches/addEditMatch';
 
 function Routes(props) {
   return (
      <Layout>
        <Switch>
+        <PrivateRoutes {...props} path="/admin_matches/edit_match/:id" exact component={AddEditMatch} />
+        <PrivateRoutes {...props} path="/admin_matches" exact component={AdminMatches} />
         <PrivateRoutes {...props} path="/admin_matches" exact component={AdminMatches} />
         <PrivateRoutes {...props} path="/dashboard" exact component={Dashboard} />
         <PublicRoutes {...props} restricted={false} path="/" exact component={Home} />
