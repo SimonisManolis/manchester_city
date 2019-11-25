@@ -11,9 +11,9 @@ class AddEditMatch extends Component {
     state ={
         matchId:'',
         formType:'',
-        formError:'',
+        formError:false,
         formSuccess:'',
-        temas:[],
+        teams:[],
         formdata:{
             date:{
                 element:'input',
