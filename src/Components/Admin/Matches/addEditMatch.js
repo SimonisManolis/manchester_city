@@ -2,7 +2,8 @@ import React, {Component} from 'react';
 import AdminLayout from '../../../HOC/admin_layuot';
 import FormField from '../../ui/formField';
 import {validate} from '../../ui/misc';
-
+import {firebaseMatches, firebaseTeams, firebaseDB} from '../../../firebase';
+import {firebaseLooper} from '../../ui/misc';
 
 
 class AddEditMatch extends Component {
@@ -164,7 +165,137 @@ class AddEditMatch extends Component {
             },
         }
     }
+
+    updateFields(match, teams, teamOptions, matchId,type){
+        const newFormdata = {
+            ...this.state.formdata
+        }
+        
+        for(let key in newFormdata){
+            if(match){
+                newFormdata[key].value=match[key];
+                newFormdata[key].valid=true;
+            }
+            if(key === 'local' || key === 'away'){
+                newFormdata[key].config.options=teamOptions
+            }
+        }
+
+        this.setState({
+            matchId,
+            formType:type,
+            formdata:newFormdata,
+            teams
+        })
+    }
+
+    successForm(message){
+        this.setState({
+            formSuccess:message
+        });
+
+        setTimeout(()=>{
+            this.setState({
+                formSuccess:''
+            });
+        },5000)
+    }
+
+    submitForm(event){
+        event.preventDefault();
+
+        let dataToSubmit= {};
+        let formIsValid = true;
+
+        for(let key in this.state.formdata){
+            dataToSubmit[key] = this.state.formdata[key].value;
+            //elenxos kai sto formIsValid gt prepei na einai ola ta pedia true
+            formIsValid = this.state.formdata[key].valid && formIsValid; 
+        }
+
+        this.state.teams.forEach((team)=>{
+            if(team.shortName === dataToSubmit.local){
+                dataToSubmit['localThmb']=team.thmb
+            }
+            if(team.shortName === dataToSubmit.away){
+                dataToSubmit['awayThmb']=team.thmb
+            }
+        })
+
+        if(formIsValid){
+            if(this.state.formType === 'Edit Match'){
+                firebaseDB.ref(`matches/${this.state.matchId}`)
+                .update(dataToSubmit).then(()=>{
+                    this.successForm('Updated correctly')
+                }).catch((error)=>{
+                    this.setState({formError: true})
+                })
+            }else{
+                firebaseMatches.push(dataToSubmit).then(()=>{
+                    this.props.history.push('/admin_matches');
+                }).catch((error)=>{
+                    this.setState({formError:true})
+                })
+            }
+            
+        }else{
+            this.setState({
+                formError:true
+            })
+        }
+    }
+
+    componentDidMount(){
+        const matchId = this.props.match.params.id;
+        const getTeams = (match,type)=>{
+            firebaseTeams.once('value').then((snapshot)=>{
+                const teams = firebaseLooper(snapshot);
+                const teamOptions = [];
+
+                //opws to firebaseLooper...
+                snapshot.forEach((childSnapshot)=>{
+                    teamOptions.push({
+                        key: childSnapshot.val().shortName,
+                        value: childSnapshot.val().shortName
+                    })
+                });
+                this.updateFields(match, teams, teamOptions, matchId,type)
+            })
+        }
+
+        if(!matchId){
+            getTeams(false,'Add Match')
+        }else{
+            firebaseDB.ref(`matches/${matchId}`).once('value')
+            .then((snapshot)=>{
+                const match = snapshot.val();
+                getTeams(match,'Edit Match')
+            })
+        }
+    }
    
+    updateForm(element){
+        //dimiourgw antigrafo tou state gia 
+        // na min enimeronetai sunexeia
+        //alla mono sto telos
+        const newFormdata = {...this.state.formdata}
+        const newElement = {...newFormdata[element.id]} 
+
+        //pairnei tin timi apo to field
+        newElement.value = element.event.target.value;
+
+        let validData = validate(newElement);
+        newElement.valid=validData[0];
+        newElement.validationMessage=validData[1]
+        //tin pernaw stin newFormdata 
+        newFormdata[element.id] = newElement;
+
+        this.setState({
+            formError:false,
+            formdata: newFormdata
+        })
+    }
+
     render(){
         return(
             <AdminLayout>
@@ -201,7 +332,7 @@ class AddEditMatch extends Component {
                             </div>
 
                             <div className="select_team_layout">
-                                <div className="label_inputs">Local</div>
+                                <div className="label_inputs">Away</div>
                                 <div className="wrapper">
                                     <div className="left">
                                         <FormField
@@ -246,7 +377,7 @@ class AddEditMatch extends Component {
                                 />
                             </div>
 
-                            <div className="succes_label">{this.state.formSuccess}</div>
+                            <div className="success_label">{this.state.formSuccess}</div>
                             {this.state.formError ?
                                 <div className="error_label">
                                     Something is wrong
