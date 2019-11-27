@@ -34,8 +34,11 @@ class FileUpload extends Component {
         firebase.storage().ref(this.props.dir)
         .child(filename).getDownloadURL()
         .then(url=>{
+            console.log(url)
             this.setState({fileURL:url})
         })
+        //pernaw to onoma tou arxeiou (px image.png) sto addEditPlayer.js
+        this.props.filename(filename)
     }
 
     static getDerivedStateFromProps(props,state){
@@ -44,9 +47,19 @@ class FileUpload extends Component {
                 name:props.defaultImgName,
                 fileURL:props.defaultImg
             }
-        }else{
-            return null
         }
+        
+        return null
+        
+    }
+
+    uploadAgain(){
+        this.setState({
+            name:'',
+            isUploading:false,
+            fileURL:''
+        });
+        this.props.resetImage();
     }
 
     render(){

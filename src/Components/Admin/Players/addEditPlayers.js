@@ -89,7 +89,7 @@ class AddEditPlayers extends Component {
                 validation:{
                     required:true
                 },
-                valid:true
+                valid:false
             }
         }
     }
@@ -105,17 +105,23 @@ class AddEditPlayers extends Component {
 
         }
     }
-
-    updateForm(element){
+    //i parametrow content einai mono gia to image uploader epeidi ekei den exw event
+    //to content exei to filename tis eikonas 
+    updateForm(element, content = ''){
         //dimiourgw antigrafo tou state gia 
         // na min enimeronetai sunexeia
         //alla mono sto telos
         const newFormdata = {...this.state.formdata}
         const newElement = {...newFormdata[element.id]} 
 
-        //pairnei tin timi apo to field
-        newElement.value = element.event.target.value;
-
+        if(content === ''){
+            //pairnei tin timi apo to field
+            newElement.value = element.event.target.value;
+        }else{
+            
+            newElement.value = content
+        }
+       
         let validData = validate(newElement);
         newElement.valid=validData[0];
         newElement.validationMessage=validData[1]
@@ -143,8 +149,17 @@ class AddEditPlayers extends Component {
         
 
         if(formIsValid){
-            
-           //submit
+            if(this.state.formType === 'Edit player'){
+
+            }else{
+                firebasePlayers.push(dataToSubmit).then(()=>{
+                    this.props.history.push('/admin_players')
+                }).catch(error=>{
+                    this.setState({
+                        formError: true
+                    })
+                })
+            }
             
         }else{
             this.setState({
@@ -154,14 +169,22 @@ class AddEditPlayers extends Component {
     }
 
     resetImage(){
-
+        const newFormdata = {...this.state.formdata};
+        newFormdata['image'].value= '';
+        newFormdata['image'].valid=false;
+        this.setState({
+            defaultImg:'',
+            formdata: newFormdata
+        })
     }
 
-    storeFilename(){
-        
+
+    storeFilename(filename){
+        this.updateForm({id:'image'},filename)
     }
     
     render(){
+        console.log(this.state.formdata)
         return(
             <AdminLayout>
                 <div className="editplayers_dialog_wrapper">
