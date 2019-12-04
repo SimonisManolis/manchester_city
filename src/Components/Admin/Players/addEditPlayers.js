@@ -94,6 +94,22 @@ class AddEditPlayers extends Component {
         }
     }
 
+    updateFields = (player, playerId, type, image) => {
+        const newFormdata = {...this.state.formdata}
+
+        for(let key in newFormdata){
+            newFormdata[key].value = player[key];
+            newFormdata[key].valid = true;
+        }
+
+        this.setState({
+            playerId,
+            defaultImg: image,
+            formType: type,
+            formdata: newFormdata
+        })
+    }
+
     componentDidMount(){
         const playerId = this.props.match.params.id;
 
@@ -102,7 +118,23 @@ class AddEditPlayers extends Component {
                 formType:'Add player'
             })
         }else{
+            firebaseDB.ref(`players/${playerId}`).once('value')
+            .then(snapshot =>{
+                const playerData = snapshot.val();
 
+                firebase.storage().ref('players')
+                .child(playerData.image).getDownloadURL()
+                .then(url => {
+                    this.updateFields( playerData, playerId,'Edit player', url)
+                }).catch(error =>{
+                    this.updateFields(
+                        {
+                            ...playerData,
+                            image:''
+                        },playerId,'Edit player',''
+                    )
+                })
+            })
         }
     }
     //i parametrow content einai mono gia to image uploader epeidi ekei den exw event
@@ -134,6 +166,17 @@ class AddEditPlayers extends Component {
         })
     }
 
+    successForm = (message) =>{
+        this.setState({
+            formSuccess: message
+        });
+        setTimeout(()=>{
+            this.setState({
+                formSuccess:''
+            });
+        },3000)
+    }
+
     submitForm(event){
         event.preventDefault();
 
@@ -150,7 +193,12 @@ class AddEditPlayers extends Component {
 
         if(formIsValid){
             if(this.state.formType === 'Edit player'){
-
+                firebaseDB.ref(`players/${this.state.playerId}`)
+                .update(dataToSubmit).then(()=>{
+                    this.successForm('Update Succesfully')
+                }).catch(error=>{
+                    this.setState({formError: true})
+                })
             }else{
                 firebasePlayers.push(dataToSubmit).then(()=>{
                     this.props.history.push('/admin_players')
